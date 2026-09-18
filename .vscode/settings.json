@@ -1,0 +1,7 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestArgs": ["tests", "-m", "not slow"],
+  "files.eol": "\n",
+  "python-envs.defaultEnvManager": "ms-python.python:system"
+}

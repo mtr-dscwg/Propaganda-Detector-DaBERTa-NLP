@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {"name": "prepare_data", "type": "debugpy", "request": "launch", "program": "scripts/prepare_data.py", "console": "integratedTerminal", "cwd": "${workspaceFolder}"},
+    {"name": "check_roundtrip", "type": "debugpy", "request": "launch", "program": "scripts/check_roundtrip.py", "console": "integratedTerminal", "cwd": "${workspaceFolder}"},
+    {"name": "train_si", "type": "debugpy", "request": "launch", "program": "scripts/train_si.py", "console": "integratedTerminal", "cwd": "${workspaceFolder}"},
+    {"name": "train_tc", "type": "debugpy", "request": "launch", "program": "scripts/train_tc.py", "console": "integratedTerminal", "cwd": "${workspaceFolder}"},
+    {"name": "evaluate dev", "type": "debugpy", "request": "launch", "program": "scripts/evaluate.py", "console": "integratedTerminal", "cwd": "${workspaceFolder}",
+     "args": ["--si-run", "runs/si-base-s13", "--tc-run", "runs/tc-base-s13", "--split", "dev"]},
+    {"name": "predict (file)", "type": "debugpy", "request": "launch", "program": "scripts/predict.py", "console": "integratedTerminal", "cwd": "${workspaceFolder}",
+     "args": ["--si-run", "runs/si-base-s13", "--tc-run", "runs/tc-base-s13", "${file}"]}
+  ]
+}

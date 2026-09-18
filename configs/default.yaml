@@ -1,0 +1,54 @@
+# The backbone flag (D5). xsmall | base | large is a one-line diff,
+# or pass --backbone large on the command line. Any HF id or local path also works.
+backbone: base               # DeBERTa-v3-base (fits an 8 GB RTX 5060 at batch 8 x accum 2, bf16)
+seed: 13
+
+data:
+  root: datasets        # the unzipped PTC release (contains train-articles/, ...)
+  processed: processed-dataset
+  dev_holdout_articles: 0        # >0 carves a dev split out of train if dev gold is missing
+  holdout_seed: 0
+
+si:                              # stage 1: span identification (BIO + CRF)
+  max_length: 256
+  stride: 64                     # token overlap between sliding windows
+  use_crf: true
+  dropout: 0.1
+  epochs: 8
+  batch_size: 8
+  eval_batch_size: 16
+  lr: 3.0e-5
+  head_lr: 1.0e-3                # CRF + projection learn faster than the encoder
+  weight_decay: 0.01
+  warmup_ratio: 0.1
+  grad_accum: 2                  # effective batch 16
+  gradient_checkpointing: false  # true if you hit CUDA OOM
+  max_grad_norm: 1.0
+  patience: 3
+  min_span_chars: 0
+  confidence_threshold: 0.0      # drop predicted spans below this mean marginal probability
+
+tc:                              # stage 2: technique classification ([BOP]/[EOP] markers)
+  max_length: 256
+  context_chars: 400             # characters of article context on each side of the span
+  use_none: false                # D4: add NONE class (phase 3, needs scripts/build_none.py first)
+  none_path: processed-dataset/none_train.parquet
+  class_weight_power: 0.5        # 0 = unweighted, 1 = full inverse frequency
+  dropout: 0.1
+  epochs: 6
+  batch_size: 8
+  eval_batch_size: 32
+  lr: 2.0e-5
+  head_lr: 1.0e-4
+  weight_decay: 0.01
+  warmup_ratio: 0.1
+  grad_accum: 2                  # effective batch 16
+  gradient_checkpointing: false  # true if you hit CUDA OOM
+  max_grad_norm: 1.0
+  patience: 2
+
+runtime:
+  device: auto                   # auto | cuda | mps | cpu
+  precision: auto                # auto | bf16 | fp16 | fp32  (auto = bf16 on capable CUDA, else fp32)
+  out_dir: runs
+  log_every: 50
