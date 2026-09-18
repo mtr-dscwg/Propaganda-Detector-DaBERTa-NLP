@@ -33,8 +33,6 @@ files by pattern. If dev gold is missing, set `data.dev_holdout_articles: 75` to
 ```powershell
 # Phase 0 - data + scorer gates
 python scripts/prepare_data.py              # expect train 371 articles / 5,468 SI / 6,128 TC
-python scripts/check_roundtrip.py           # exit 0 = no offset bugs; prints the BIO ceiling
-python scripts/score.py --task si --pred <baseline_output.txt> --split dev   # must give 0.31
 
 # Phase 1 - MVP
 python scripts/train_si.py                  # -> runs/si-base-s13

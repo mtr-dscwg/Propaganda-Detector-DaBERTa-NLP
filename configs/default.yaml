@@ -6,7 +6,7 @@ seed: 13
 data:
   root: datasets        # the unzipped PTC release (contains train-articles/, ...)
   processed: processed-dataset
-  dev_holdout_articles: 0        # >0 carves a dev split out of train if dev gold is missing
+  dev_holdout_articles: 30      # >0 carves a dev split out of train if dev gold is missing
   holdout_seed: 0
 
 si:                              # stage 1: span identification (BIO + CRF)
@@ -24,6 +24,7 @@ si:                              # stage 1: span identification (BIO + CRF)
   grad_accum: 2                  # effective batch 16
   gradient_checkpointing: false  # true if you hit CUDA OOM
   max_grad_norm: 1.0
+  max_skipped_steps: 20           # abort if more updates than this hit NaN/inf gradients
   patience: 3
   min_span_chars: 0
   confidence_threshold: 0.0      # drop predicted spans below this mean marginal probability
@@ -45,6 +46,7 @@ tc:                              # stage 2: technique classification ([BOP]/[EOP
   grad_accum: 2                  # effective batch 16
   gradient_checkpointing: false  # true if you hit CUDA OOM
   max_grad_norm: 1.0
+  max_skipped_steps: 20           # abort if more updates than this hit NaN/inf gradients
   patience: 2
 
 runtime:
@@ -52,3 +54,4 @@ runtime:
   precision: auto                # auto | bf16 | fp16 | fp32  (auto = bf16 on capable CUDA, else fp32)
   out_dir: runs
   log_every: 50
+

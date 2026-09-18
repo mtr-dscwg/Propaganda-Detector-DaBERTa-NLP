@@ -1,0 +1,46 @@
+{
+  "root": "C:\\Users\\Hisyam\\Documents\\Projects\\Propaganda Detector DaBERTa NLP\\datasets",
+  "dev_is_holdout": true,
+  "train": {
+    "articles": 341,
+    "si_spans": 4965,
+    "tc_spans": 5565,
+    "techniques": {
+      "Loaded_Language": 1923,
+      "Name_Calling,Labeling": 970,
+      "Repetition": 569,
+      "Doubt": 446,
+      "Exaggeration,Minimisation": 405,
+      "Appeal_to_fear-prejudice": 263,
+      "Flag-Waving": 217,
+      "Causal_Oversimplification": 185,
+      "Appeal_to_Authority": 137,
+      "Slogans": 123,
+      "Whataboutism,Straw_Men,Red_Herring": 100,
+      "Black-and-White_Fallacy": 96,
+      "Thought-terminating_Cliches": 70,
+      "Bandwagon,Reductio_ad_hitlerum": 61
+    }
+  },
+  "dev": {
+    "articles": 30,
+    "si_spans": 503,
+    "tc_spans": 563,
+    "techniques": {
+      "Loaded_Language": 200,
+      "Name_Calling,Labeling": 88,
+      "Exaggeration,Minimisation": 61,
+      "Repetition": 52,
+      "Doubt": 47,
+      "Appeal_to_fear-prejudice": 31,
+      "Causal_Oversimplification": 24,
+      "Flag-Waving": 12,
+      "Black-and-White_Fallacy": 11,
+      "Bandwagon,Reductio_ad_hitlerum": 11,
+      "Appeal_to_Authority": 7,
+      "Whataboutism,Straw_Men,Red_Herring": 7,
+      "Thought-terminating_Cliches": 6,
+      "Slogans": 6
+    }
+  }
+}

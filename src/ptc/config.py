@@ -31,6 +31,7 @@ class DataConfig:
 
 @dataclass
 class SIConfig:
+    max_skipped_steps: int = 20
     max_length: int = 256
     stride: int = 64
     use_crf: bool = True
@@ -52,6 +53,7 @@ class SIConfig:
 
 @dataclass
 class TCConfig:
+    max_skipped_steps: int = 20
     max_length: int = 256
     context_chars: int = 400
     use_none: bool = False

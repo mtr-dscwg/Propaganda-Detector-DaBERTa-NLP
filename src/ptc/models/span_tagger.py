@@ -28,7 +28,8 @@ class SpanTagger(nn.Module):
         if labels is not None:
             mask = attention_mask.bool()
             if self.crf is not None:
-                out["loss"] = self.crf.neg_log_likelihood(em, labels, mask)
+                with torch.autocast(device_type="cuda", enabled=False):
+                    out["loss"] = self.crf.neg_log_likelihood(em.float(), labels, mask)
             else:
                 out["loss"] = F.cross_entropy(em[mask], labels[mask])
         return out

@@ -37,6 +37,11 @@ def param_groups(model: nn.Module, lr: float, head_lr: float, weight_decay: floa
     return out
 
 
+def _nonfinite_report(model: nn.Module) -> str:
+    bad = [n for n, p in model.named_parameters() if not torch.isfinite(p).all()]
+    return f"{len(bad)} weight tensors non-finite, e.g. {bad[:3]}" if bad else "all weights finite"
+
+
 def fit(model: nn.Module, dataset, collate: Callable, hp, device: torch.device,
         amp_dtype: torch.dtype | None, evaluate: Callable[[], dict], metric: str,
         save: Callable[[dict], None], log_path: Path, seed: int, log_every: int = 50) -> dict:
@@ -50,7 +55,7 @@ def fit(model: nn.Module, dataset, collate: Callable, hp, device: torch.device,
     scheduler = get_linear_schedule_with_warmup(optimizer, int(hp.warmup_ratio * total), total)
     scaler = torch.amp.GradScaler("cuda", enabled=amp_dtype == torch.float16)
 
-    best, best_metrics, bad_epochs = -math.inf, {}, 0
+    best, best_metrics, bad_epochs, skipped = -math.inf, {}, 0, 0
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with open(log_path, "a", encoding="utf-8", newline="\n") as logf:
         for epoch in range(1, hp.epochs + 1):
@@ -62,13 +67,30 @@ def fit(model: nn.Module, dataset, collate: Callable, hp, device: torch.device,
                 with autocast(device, amp_dtype):
                     loss = model(**batch)["loss"]
                 if not torch.isfinite(loss):
-                    raise FloatingPointError(f"Non-finite loss at epoch {epoch} step {step}")
+                    raise FloatingPointError(
+                        f"Non-finite loss at epoch {epoch} step {step} "
+                        f"({_nonfinite_report(model)}). If weights are fine, the forward pass "
+                        f"overflowed: try --set runtime.precision=fp32.")
                 scaler.scale(loss / hp.grad_accum).backward()
                 running += loss.item()
                 n += 1
                 if step % hp.grad_accum == 0 or step == len(loader):
                     scaler.unscale_(optimizer)
-                    nn.utils.clip_grad_norm_(model.parameters(), hp.max_grad_norm)
+                    norm = nn.utils.clip_grad_norm_(model.parameters(), hp.max_grad_norm)
+                    if not torch.isfinite(norm) and amp_dtype != torch.float16:
+                        # fp16's GradScaler skips these itself; for bf16/fp32 we must, or the
+                        # NaN gets written into the weights and surfaces a step later.
+                        skipped += 1
+                        bad = [name for name, p in model.named_parameters()
+                               if p.grad is not None and not torch.isfinite(p.grad).all()]
+                        log.warning("non-finite gradients at epoch %d step %d, update skipped "
+                                    "(%d params, e.g. %s)", epoch, step, len(bad), bad[:3])
+                        optimizer.zero_grad(set_to_none=True)
+                        if skipped > hp.max_skipped_steps:
+                            raise FloatingPointError(
+                                f"{skipped} updates skipped for non-finite gradients; first bad "
+                                f"params: {bad[:5]}. Try --set runtime.precision=fp32.")
+                        continue
                     scaler.step(optimizer)
                     scaler.update()
                     scheduler.step()
