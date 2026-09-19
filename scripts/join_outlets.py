@@ -18,7 +18,7 @@ if __name__ == "__main__":
     add_config_args(p)
     p.add_argument("--proppy", nargs="+", required=True, help="proppy TSV files (globs ok)")
     p.add_argument("--source-col", type=int, help="use this proppy column as outlet instead of URL domain")
-    p.add_argument("--out", default="data/processed/outlets.csv")
+    p.add_argument("--out", default="processed-dataset/outlets.csv")
     args = p.parse_args()
     cfg = config_from_args(args)
     setup_logging()

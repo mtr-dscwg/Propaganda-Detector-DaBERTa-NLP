@@ -1,6 +1,24 @@
 # Changelog
 
-## [Unreleased]
+## [19/09/26]
+
+### Fixed
+- **Naming issues for each run is fixed**
+  The naming scheme originally combined any individual runs into the same, regardless of the use of CRF or None, which would've deleted entire runs
+
+  Added label conditions in `config.py` to properly differentiate
+
+
+
+### Added
+- Instructions to download Proppy in the Zenodo release (record 3271522) to be put in .\datasets with the SemEval-2020 Task 11 dataset (record 3952415)
+
+### Changed
+- Changed some directory 
+- Deleted some unecessary stages from the workflow instructions
+
+
+## [18/09/26]
 
 ### Fixed
 - **Encoder weights are now always loaded as float32** (`models/checkpoint.py`).

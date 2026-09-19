@@ -48,8 +48,8 @@ python scripts/train_si.py --set si.use_crf=false   # CRF ablation
 # Phase 3 - NONE class (D4) and outlet control (D9)
 python scripts/build_none.py --si-run runs/si-base-s13
 python scripts/train_tc.py --set tc.use_none=true
-python scripts/join_outlets.py --proppy "data/raw/proppy/*.tsv"
-python scripts/evaluate.py ... --outlets data/processed/outlets.csv
+python scripts/join_outlets.py --proppy "datasets/proppy/*.tsv"
+python scripts/evaluate.py --si-run runs/si-base-s1 --tc-run runs/tc-base-s1 --split dev --outlets processed-dataset\outlets.csv
 
 # Test-set submission files (official formats) land in runs/eval-*/test_*.txt
 python scripts/evaluate.py --si-run ... --tc-run ... --split test

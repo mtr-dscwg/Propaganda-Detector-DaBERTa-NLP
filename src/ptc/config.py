@@ -99,9 +99,11 @@ class Config:
         return self.backbone if self.backbone in BACKBONES else Path(self.backbone).name
 
     def run_name(self, stage: str) -> str:
-        if stage == "tc" and self.tc.use_none:
-            stage = "tc-none"
-        return f"{stage}-{self.backbone_tag}-s{self.seed}"
+       if stage == "si" and not self.si.use_crf:
+           stage = "si-nocrf"
+       if stage == "tc" and self.tc.use_none:
+           stage = "tc-none"
+       return f"{stage}-{self.backbone_tag}-s{self.seed}"
 
     def to_dict(self) -> dict:
         return asdict(self)
