@@ -8,8 +8,6 @@
 
   Added label conditions in `config.py` to properly differentiate
 
-
-
 ### Added
 - Instructions to download Proppy in the Zenodo release (record 3271522) to be put in .\datasets with the SemEval-2020 Task 11 dataset (record 3952415)
 
@@ -31,8 +29,6 @@
 
   bf16 autocast still applies on top of fp32 master weights.
   Regression test: `tests/test_checkpoint.py`.
-
-
 
 ### Added
 - Training loop detects non-finite gradients, names the offending parameters, and skips

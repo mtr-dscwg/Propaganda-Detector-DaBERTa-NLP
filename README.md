@@ -23,8 +23,10 @@ If any dependency has no Python 3.14 wheel yet, recreate the venv with `py -3.12
 
 ## Data
 
-Download datasets-v2.tgz from https://zenodo.org/records/3952415 (CC BY 4.0, no registration) and put it on
-`datasets/train-articles/` exists (or point `data.root` elsewhere). The loader finds label
+Download datasets-v2.tgz from https://zenodo.org/records/3952415 (CC BY 4.0, no registration) and put it on the project root.
+Also download 3271522.zip from https://zenodo.org/records/3271522 (CC BY 4.0, no registration) and put it on `datasets/` after datasets-v2.tgz
+
+`datasets/` exists (or point `data.root` elsewhere). The loader finds label
 files by pattern. If dev gold is missing, set `data.dev_holdout_articles: 75` to carve dev from train.
 
 
