@@ -1,5 +1,26 @@
 # Changelog
 
+## [11/10/26]
+
+### Fixed
+-
+
+### Added
+- **A webpage!**
+  Added an interactable website that users can use to paste article text and links for the detector to analyze. Currently, the features are:
+  - Inline highlights for critical text
+  - Hover tooltips
+  - Legends with details
+  - Overlapping spans markers
+  - Status line
+  - Source line
+  - Live threshold for the --min-confidence value
+  - Links (experimental)
+
+### Changed
+- Added a directory for the webpage
+- Changed render.py to accomodate for UI usage
+
 ## [19/09/26]
 
 ### Fixed

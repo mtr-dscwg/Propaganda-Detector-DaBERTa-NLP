@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Propaganda Detector</title>
+<style>
+  /* Tokens taken from the portfolio site (index.astro). */
+  :root {
+    --ink:   #1a1a1a;
+    --muted: #4a4a4a;
+    --faint: #6b6b6b;     /* tags and secondary output; 5:1 on white */
+    --line:  #e4e4e4;     /* hairlines inside the box */
+    --paper: #ffffff;
+    --ease:  cubic-bezier(0.22, 1, 0.36, 1);
+    /* Tailwind's default sans stack. If Layout.astro sets a custom font, put it first here. */
+    --sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    --mono: ui-monospace, "Cascadia Mono", Consolas, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+
+  /* Header, same as the site's */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 24px;
+  }
+  header a {
+    font-size: 0.95rem; font-weight: 500; line-height: 1;
+    color: var(--ink); text-decoration: none;
+    transition: opacity 150ms;
+  }
+  header a:hover { opacity: .7; }
+
+  /* Hero */
+  .hero {
+    text-align: center;
+    padding: clamp(48px, 14vh, 140px) 24px 48px;
+  }
+  .hero h1 {
+    margin: 0;
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    line-height: 1.05;
+  }
+  .hero p {
+    margin: 12px auto 0;
+    max-width: 36rem;
+    font-size: 1.125rem; line-height: 1.5;
+    color: var(--muted);
+  }
+
+  /* The box: the terminal lives in here */
+  .term {
+    max-width: calc(80ch + 58px);
+    margin: 0 auto 96px;
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    font: 14px/1.65 var(--mono);
+  }
+  .titlebar {
+    padding: 8px 20px;
+    border-bottom: 1px solid var(--ink);
+    color: var(--faint); font-size: 12px;
+  }
+  .screen { padding: 20px 28px 28px; }
+
+  .motd { color: var(--muted); margin: 0 0 20px; white-space: pre-wrap; }
+  .motd strong { color: var(--ink); font-weight: 600; }
+
+  .cmd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .ps1 { font-weight: 600; }
+
+  #thr {
+    font: inherit; color: var(--ink); background: var(--paper);
+    border: 1px solid var(--line); border-radius: 0;
+    width: 7ch; padding: 0 4px; text-align: right;
+  }
+
+  #input {
+    display: block; width: 100%;
+    min-height: 14lh; resize: vertical;
+    margin: 8px 0;
+    padding: 12px 14px;
+    font: inherit; color: var(--ink); background: var(--paper);
+    border: 1px solid var(--line); border-left: 2px solid var(--ink);
+    border-radius: 0;
+    caret-color: var(--ink);
+  }
+  #input::placeholder { color: var(--faint); }
+
+  .eof { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  .hint { color: var(--faint); font-size: 12px; }
+
+  #run {
+    font: 500 0.95rem/1 var(--sans);
+    color: var(--paper); background: var(--ink);
+    border: 0; border-radius: 0;
+    padding: 8px 16px; cursor: pointer;
+    transition: opacity 150ms;
+  }
+  #run:hover { opacity: .7; }
+  #run:disabled { opacity: .4; cursor: progress; }
+
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  #output:not(:empty) { margin-top: 28px; border-top: 1px solid var(--line); padding-top: 20px; }
+  .line { margin: 0; white-space: pre-wrap; }
+  .echo, .status { color: var(--faint); }
+  .status { margin-bottom: 16px; }
+  .error { color: var(--ink); font-weight: 600; }
+  .source { margin: -8px 0 16px; overflow-wrap: anywhere; }
+  .source-title { font-weight: 600; }
+  .source a { color: var(--faint); text-decoration: underline; text-underline-offset: 2px; }
+
+  .article { margin: 0; font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
+  mark.hl { color: var(--paper); background: var(--ink); padding: 0 1px; }   /* reverse video */
+  .tag { color: var(--faint); font-size: .78em; }
+  mark.flash { animation: flash 1.2s var(--ease); }
+  @keyframes flash {
+    from { outline: 2px solid var(--ink); outline-offset: 3px; }
+    to   { outline: 2px solid transparent; outline-offset: 3px; }
+  }
+
+  .rule { color: var(--line); margin: 20px 0 10px; overflow: hidden; white-space: nowrap; }
+  .legend { overflow-x: auto; }
+  .legend-row {
+    display: block; width: max-content; min-width: 100%;
+    margin: 0; padding: 1px 0;
+    font: inherit; text-align: left; white-space: pre;
+    color: var(--ink); background: none; border: 0;
+  }
+  button.legend-row { cursor: pointer; transition: opacity 150ms; }
+  button.legend-row:hover { opacity: .7; }
+  .legend-row .name { font-weight: 600; }
+  .legend-row .note { color: var(--faint); }
+
+  .heading { font-weight: 600; margin-bottom: 8px; }
+  .sent { display: grid; grid-template-columns: 7ch 1fr; column-gap: 1ch; margin: 0 0 10px; }
+  .sent-score { color: var(--faint); }
+  .sent-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .sent-techs { grid-column: 2; color: var(--faint); }
+
+  /* Motion, same curve and timing as the site */
+  @keyframes fade-slide-up {
+    from { opacity: 0; transform: translateY(24px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .enter { animation: fade-slide-up 0.85s var(--ease) both; }
+  .enter.d1 { animation-delay: 0.15s; }
+  .enter.d2 { animation-delay: 0.35s; }
+  .reveal { animation: fade-slide-up 0.6s var(--ease) both; }
+
+  @media (max-width: 640px) {
+    .term { margin: 0 12px 64px; }
+    .screen { padding: 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .enter, .reveal { animation: none; }
+    mark.flash { animation: none; outline: 2px solid var(--ink); outline-offset: 3px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <!-- Point this at your site's URL once it's deployed. -->
+  <a href="/">Home</a>
+</header>
+
+<main>
+  <section class="hero">
+    <h1 class="enter">Propaganda Detector</h1>
+    <p class="enter d1">Paste an article, or a link to one, to highlight the rhetorical techniques it uses.</p>
+  </section>
+
+  <div class="term enter d2">
+    <div class="titlebar">ptc@localhost:~</div>
+    <div class="screen">
+      <p class="motd"><strong>ptc</strong>, a two-stage DeBERTa-v3 tagger for the 14 propaganda techniques of SemEval-2020 Task 11.
+Highlights are suggestions, not verdicts: span detection tops out near 0.5 F1 even for the best systems.</p>
+
+      <p class="cmd"><span class="ps1">$</span> ptc analyze --min-confidence <input id="thr" type="number" min="0" max="1" step="0.05" value="0.00" aria-label="Minimum confidence, 0 to 1"> &lt;&lt;EOF</p>
+      <textarea id="input" spellcheck="false" aria-label="Article text" placeholder="Paste an article, or a link to one."></textarea>
+      <div class="eof">
+        <span>EOF</span>
+        <button id="run" type="button">Run analysis</button>
+        <span class="hint">or Ctrl+Enter</span>
+      </div>
+
+      <section id="output" aria-live="polite"></section>
+    </div>
+  </div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let last = null;      // most recent successful result, re-rendered when the threshold changes
+let spinTimer = null;
+
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined) n.textContent = text;   // textContent never parses HTML
+  return n;
+}
+function line(cls, text) { return el("p", "line " + cls, text); }
+
+function threshold() {
+  const v = parseFloat($("thr").value);
+  return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0;
+}
+
+// A single http(s) link with nothing else is treated as "fetch this page".
+const LINK = /^https?:\/\/\S+$/i;
+
+function command(url) {
+  return `$ ptc analyze --min-confidence ${threshold().toFixed(2)}` + (url ? ` --url ${url}` : "");
+}
+
+function setBusy(busy, url) {
+  $("run").disabled = busy;
+  clearInterval(spinTimer);
+  if (!busy) return;
+  const out = $("output");
+  out.classList.remove("reveal");
+  out.replaceChildren(line("echo", command(url)));
+  const label = url ? "fetching page and running model" : "running model";
+  const s = line("status", reduceMotion ? label + "..." : label + " |");
+  out.append(s);
+  if (!reduceMotion) {
+    const frames = "|/-\\"; let i = 0;
+    spinTimer = setInterval(() => { s.textContent = label + " " + frames[++i % 4]; }, 120);
+  }
+}
+
+function showError(msg) {
+  $("output").replaceChildren(line("error", "error: " + msg));
+}
+
+async function run() {
+  const raw = $("input").value;
+  if (!raw.trim()) { showError("Paste an article or a link into the box, then run again."); return; }
+  const url = LINK.test(raw.trim()) ? raw.trim() : null;
+  setBusy(true, url);
+  try {
+    const res = await fetch("/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(url ? { url } : { text: raw }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `Server returned ${res.status}.`);
+    // Python offsets count code points; JS strings count UTF-16 units.
+    // Array.from splits by code point, so emoji don't shift every later span.
+    // Use the server's copy of the text: for a link, it's the extracted article.
+    last = { ...data, chars: Array.from(data.text) };
+    render();
+    const out = $("output");
+    void out.offsetWidth;            // restart the animation
+    out.classList.add("reveal");
+  } catch (e) {
+    showError(e instanceof TypeError
+      ? "Can't reach the server. Check that webpage/server.py is still running."
+      : e.message);
+  } finally {
+    setBusy(false);
+  }
+}
+
+function render() {
+  if (!last) return;
+  const thr = threshold();
+  const { chars } = last;
+  const kept = last.spans
+    .map((s) => ({ ...s, score: s.confidence * s.technique_confidence }))
+    .filter((s) => s.score >= thr)
+    .sort((a, b) => a.start - b.start || a.end - b.end)
+    .map((s, i) => ({ ...s, n: i + 1 }));
+
+  const out = $("output");
+  out.replaceChildren();
+  out.append(line("echo", command(last.source && last.source.url)));
+  out.append(line("status",
+    `${kept.length} of ${last.spans.length} spans shown, ` +
+    `${chars.length.toLocaleString()} characters, ${last.elapsed_s.toFixed(2)} s`));
+
+  if (last.source) {
+    const src = el("p", "line source");
+    if (last.source.title) src.append(el("span", "source-title", last.source.title), " ");
+    const a = el("a", "", last.source.url);
+    a.href = last.source.url; a.target = "_blank"; a.rel = "noopener noreferrer";
+    src.append(a);
+    out.append(src);
+  }
+
+  // Inline highlights. Same overlap rule as render.py: first span wins,
+  // later overlapping spans appear in the legend only.
+  const art = el("pre", "article");
+  let pos = 0;
+  for (const s of kept) {
+    s.inline = s.start >= pos;
+    if (!s.inline) continue;
+    art.append(chars.slice(pos, s.start).join(""));
+    const m = el("mark", "hl", chars.slice(s.start, s.end).join(""));
+    m.id = "span-" + s.n;
+    m.tabIndex = -1;
+    m.title = `${last.techniques[s.technique].name} (span ${s.confidence.toFixed(2)}, label ${s.technique_confidence.toFixed(2)})`;
+    art.append(m, el("span", "tag", `[${s.n}]`));
+    pos = s.end;
+  }
+  art.append(chars.slice(pos).join(""));
+  out.append(art);
+
+  out.append(el("div", "rule", "-".repeat(200)));
+
+  const legend = el("div", "legend");
+  if (kept.length === 0) {
+    legend.append(line("echo", last.spans.length
+      ? `No spans at or above ${thr.toFixed(2)}. Lower --min-confidence to see weaker candidates.`
+      : "No techniques found in this text."));
+  }
+  for (const s of kept) {
+    const row = el(s.inline ? "button" : "div", "legend-row");
+    row.append(
+      `[${String(s.n).padStart(2)}] `,
+      el("span", "name", last.techniques[s.technique].name.padEnd(34)),
+      ` span ${s.confidence.toFixed(2)}  label ${s.technique_confidence.toFixed(2)}  -> ${s.score.toFixed(2)}`,
+    );
+    if (s.inline) {
+      row.type = "button";
+      row.addEventListener("click", () => jumpTo(s.n));
+    } else {
+      row.append(el("span", "note", "  (overlaps an earlier span)"));
+    }
+    legend.append(row);
+  }
+  out.append(legend);
+
+  // Critical sentences, as render_sentences() prints them. Not threshold-filtered,
+  // matching predict.py.
+  if (last.sentences && last.sentences.length) {
+    out.append(el("div", "rule", "-".repeat(200)));
+    out.append(line("heading", "Critical sentences:"));
+    const list = el("div", "sentences");
+    for (const r of last.sentences) {
+      const row = el("div", "sent");
+      row.append(el("span", "sent-score", `(${r.confidence.toFixed(2)})`), el("span", "sent-text", r.sentence));
+      row.append(el("span", "sent-techs", "-> " + r.techniques.join(", ")));
+      list.append(row);
+    }
+    out.append(list);
+  }
+}
+
+function jumpTo(n) {
+  const m = $("span-" + n);
+  if (!m) return;
+  m.scrollIntoView({ block: "center", behavior: reduceMotion ? "auto" : "smooth" });
+  m.focus({ preventScroll: true });
+  m.classList.remove("flash");
+  void m.offsetWidth;                // restart the animation
+  m.classList.add("flash");
+}
+
+$("run").addEventListener("click", run);
+$("input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); run(); }
+});
+$("thr").addEventListener("input", render);   // re-filter locally, no model call
+</script>
+</body>
+</html>

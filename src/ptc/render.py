@@ -49,18 +49,62 @@ def render_sentences(rows: list[dict]) -> str:
     return "\n".join(lines)
 
 
+# HTML hues (degrees on the colour wheel), grouped by technique family.
+# Separate from COLOURS above, which holds xterm-256 codes for the terminal.
+HTML_HUES = {
+    # reds/oranges: attacks on people
+    "Name_Calling,Labeling": 0,
+    "Loaded_Language": 20,
+    "Appeal_to_fear-prejudice": 38,
+    # yellows/greens: distortion of facts
+    "Exaggeration,Minimisation": 55,
+    "Causal_Oversimplification": 80,
+    "Black-and-White_Fallacy": 105,
+    "Doubt": 130,
+    # cyans/blues: appeals to authority and the crowd
+    "Appeal_to_Authority": 175,
+    "Bandwagon,Reductio_ad_hitlerum": 200,
+    "Flag-Waving": 225,
+    # purples/pinks: slogans and thought-stoppers
+    "Slogans": 260,
+    "Thought-terminating_Cliches": 285,
+    "Repetition": 310,
+    "Whataboutism,Straw_Men,Red_Herring": 335,
+    "NONE": 0,  # unused in HTML output; NONE spans are dropped before rendering
+}
+
+
+def html_colour(technique: str, lightness: int = 85) -> str:
+    """Background colour for a technique in HTML output."""
+    hue = HTML_HUES.get(technique, 0)
+    saturation = 0 if technique not in HTML_HUES else 75
+    return f"hsl({hue}, {saturation}%, {lightness}%)"
+
 def render_html(text: str, preds: pd.DataFrame, title: str = "") -> str:
     preds = preds.sort_values(["start", "end"])
+
+    legend = "".join(
+        f'<span style="background:{html_colour(t)};padding:2px 8px;margin:0 6px 6px 0;'
+        f'border-radius:3px;display:inline-block;font-size:0.85em">'
+        f"{html.escape(DISPLAY_NAMES.get(t, t))}</span>"
+        for t in sorted(set(preds["technique"]))
+    )
+    
     parts, pos = [], 0
     for r in preds.itertuples(index=False):
         if r.start < pos:
             continue
         parts.append(html.escape(text[pos:r.start]))
         tip = f"{DISPLAY_NAMES.get(r.technique, r.technique)} (span {r.confidence:.2f}, label {r.technique_confidence:.2f})"
-        parts.append(f'<mark title="{html.escape(tip)}" style="background:hsl({COLOURS.get(r.technique, 0)},80%,85%)">'
+        parts.append(f'<mark title="{html.escape(tip)}" style="background:{html_colour(r.technique)}">'
                      f"{html.escape(text[r.start:r.end])}</mark>")
         pos = r.end
     parts.append(html.escape(text[pos:]))
+
     return (f"<!doctype html><meta charset='utf-8'><title>{html.escape(title)}</title>"
-            f"<body style='font:16px/1.6 system-ui;max-width:48rem;margin:2rem auto;white-space:pre-wrap'>"
-            f"{''.join(parts)}</body>")
+            f"<body style='font:16px/1.6 system-ui;max-width:48rem;margin:2rem auto'>"
+            f"<div style='white-space:normal;margin-bottom:1.5rem'>"
+            f"{legend}"                       
+            f"</div>"
+            f"<div style='white-space:pre-wrap'>{''.join(parts)}</div>"
+            f"</body>")
