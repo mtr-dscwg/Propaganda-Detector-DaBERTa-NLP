@@ -99,3 +99,21 @@ def setup_logging(level: int = 20) -> None:
                         datefmt="%H:%M:%S")
     for noisy in ("transformers", "huggingface_hub", "urllib3", "filelock"):
         logging.getLogger(noisy).setLevel(logging.WARNING)
+
+def unique_dir(base: Path) -> Path:
+    """Return `base`, or base-2 / base-3 / ... if it already exists, so runs never overwrite."""
+    if not base.exists():
+        return base
+    n = 2
+    while (candidate := base.with_name(f"{base.name}-{n}")).exists():
+        n += 1
+    return candidate
+
+def experiment_dir(root: Path, group: str) -> Path:
+    """Return runs/<group>, or <group>-2, -3 ... if it already exists."""
+    candidate = root / group
+    n = 1
+    while candidate.exists():
+        n += 1
+        candidate = root / f"{group}-{n}"
+    return candidate

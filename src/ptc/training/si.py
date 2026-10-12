@@ -12,18 +12,18 @@ from ..inference import predict_spans
 from ..models.checkpoint import load_encoder, load_tokenizer, save_bundle
 from ..models.span_tagger import SpanTagger
 from ..scoring import score_si, write_submission
-from ..utils import describe_device, get_device, resolve_precision, save_json, set_seed
+from ..utils import describe_device, get_device, resolve_precision, save_json, set_seed, unique_dir
 from .loop import fit
 
 log = logging.getLogger(__name__)
 
 
-def train_si(cfg: Config) -> dict:
+def train_si(cfg: Config, out_dir: str | Path | None = None) -> dict:
     set_seed(cfg.seed)
     hp = cfg.si
     device = get_device(cfg.runtime.device)
     amp = resolve_precision(cfg.runtime.precision, device)
-    out = Path(cfg.runtime.out_dir) / cfg.run_name("si")
+    out = Path(out_dir) if out_dir else Path(cfg.runtime.out_dir) / cfg.run_name("si")
     log.info("SI run %s on %s (amp=%s) backbone=%s", out.name, describe_device(device), amp, cfg.backbone_id)
 
     train = load_split(cfg.data.processed, "train")

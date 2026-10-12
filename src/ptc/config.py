@@ -85,6 +85,7 @@ class RuntimeConfig:
 class Config:
     backbone: str = "base"
     seed: int = 13
+    tag: str = ""
     data: DataConfig = field(default_factory=DataConfig)
     si: SIConfig = field(default_factory=SIConfig)
     tc: TCConfig = field(default_factory=TCConfig)
@@ -99,12 +100,18 @@ class Config:
         return self.backbone if self.backbone in BACKBONES else Path(self.backbone).name
 
     def run_name(self, stage: str) -> str:
-       if stage == "si" and not self.si.use_crf:
-           stage = "si-nocrf"
-       if stage == "tc" and self.tc.use_none:
-           stage = "tc-none"
-       return f"{stage}-{self.backbone_tag}-s{self.seed}"
+        if stage == "si" and not self.si.use_crf:
+             stage = "si-nocrf"
+        if stage == "tc" and self.tc.use_none:
+             stage = "tc-none"
+        name = f"{stage}-{self.backbone_tag}-s{self.seed}"
+        if self.tag:
+            name = f"{name}-{self.tag}"
+        return name
 
+    def group_name(self) -> str:
+        return f"s{self.seed}-{self.tag}" if self.tag else f"s{self.seed}"
+    
     def to_dict(self) -> dict:
         return asdict(self)
 
@@ -169,3 +176,4 @@ def config_from_args(args: argparse.Namespace) -> Config:
         overrides.append(f"seed={args.seed}")
     path = args.config if args.config and Path(args.config).exists() else None
     return load_config(path, overrides)
+

@@ -31,10 +31,10 @@ si:                              # stage 1: span identification (BIO + CRF)
 
 tc:                              # stage 2: technique classification ([BOP]/[EOP] markers)
   max_length: 256
-  context_chars: 400             # characters of article context on each side of the span
+  context_chars: 800             # characters of article context on each side of the span
   use_none: false                # D4: add NONE class (phase 3, needs scripts/build_none.py first)
   none_path: processed-dataset/none_train.parquet
-  class_weight_power: 0.5        # 0 = unweighted, 1 = full inverse frequency
+  class_weight_power: 1.0        # 0 = unweighted, 1 = full inverse frequency
   dropout: 0.1
   epochs: 6
   batch_size: 8
@@ -44,7 +44,7 @@ tc:                              # stage 2: technique classification ([BOP]/[EOP
   weight_decay: 0.01
   warmup_ratio: 0.1
   grad_accum: 2                  # effective batch 16
-  gradient_checkpointing: false  # true if you hit CUDA OOM
+  gradient_checkpointing: true  # true if you hit CUDA OOM
   max_grad_norm: 1.0
   max_skipped_steps: 20           # abort if more updates than this hit NaN/inf gradients
   patience: 2

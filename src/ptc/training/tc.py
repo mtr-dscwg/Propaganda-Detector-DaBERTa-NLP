@@ -14,7 +14,7 @@ from ..models.checkpoint import load_encoder, load_tokenizer, save_bundle
 from ..models.span_classifier import SpanClassifier
 from ..scoring import score_tc, write_submission
 from ..techniques import NONE_LABEL, label_list
-from ..utils import describe_device, get_device, resolve_precision, save_json, set_seed
+from ..utils import describe_device, get_device, resolve_precision, save_json, set_seed, unique_dir
 from .loop import fit
 
 log = logging.getLogger(__name__)
@@ -33,12 +33,12 @@ def training_rows(cfg: Config, train_tc: pd.DataFrame) -> pd.DataFrame:
     return rows.reset_index(drop=True)
 
 
-def train_tc(cfg: Config) -> dict:
+def train_tc(cfg: Config, out_dir: str | Path | None = None) -> dict:
     set_seed(cfg.seed)
     hp = cfg.tc
     device = get_device(cfg.runtime.device)
     amp = resolve_precision(cfg.runtime.precision, device)
-    out = Path(cfg.runtime.out_dir) / cfg.run_name("tc")
+    out = Path(out_dir) if out_dir else Path(cfg.runtime.out_dir) / cfg.run_name("tc")
     log.info("TC run %s on %s (amp=%s) backbone=%s", out.name, describe_device(device), amp, cfg.backbone_id)
 
     train = load_split(cfg.data.processed, "train")

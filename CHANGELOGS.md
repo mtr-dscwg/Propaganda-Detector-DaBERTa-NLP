@@ -1,5 +1,17 @@
 # Changelog
 
+## [12/10/26]
+
+### Fixed
+- Naming and organizational issues with the runs, now it shouldn't override existing runs, and exists on folders for each run rather than out in the open on /run
+
+### Added
+- Runs will now be added inside run folders, named after parameters set, so overriding files shouldn't be a major issue
+- Added `run_experiment.py` which makes it so that every training and experiment run is done with a single command, rather than having to run `train_tc.py` and `train_si.py` respectively 
+ 
+### Changed
+- Some parameters on `default.yaml`, though they're mainly for personal fine turning
+
 ## [11/10/26]
 
 ### Fixed
