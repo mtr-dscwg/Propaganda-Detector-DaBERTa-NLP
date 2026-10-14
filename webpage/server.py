@@ -32,6 +32,10 @@ from ptc.techniques import DISPLAY_NAMES
 # index.html may sit in webpage/static/ or directly in webpage/; use whichever exists.
 HERE = Path(__file__).resolve().parent
 STATIC_DIR = HERE / "static" if (HERE / "static" / "index.html").exists() else HERE
+REPO_ROOT = HERE.parent  # webpage/ sits at the top of the repo
+
+# The changelog shown on the page, read fresh from the repo on each request.
+CHANGELOG_NAMES = ("CHANGELOG.md", "CHANGELOGS.md")
 
 MAX_CHARS = 50_000  # underscores in numeric literals are just digit separators
 DOC_ID = "input"
@@ -146,6 +150,15 @@ def run_model(text: str) -> tuple[pd.DataFrame, list[dict]]:
 @app.get("/")
 def index():
     return send_from_directory(STATIC_DIR, "index.html")
+
+
+@app.get("/api/changelog")
+def changelog():
+    for name in CHANGELOG_NAMES:
+        path = REPO_ROOT / name
+        if path.is_file():
+            return jsonify(name=name, markdown=path.read_text(encoding="utf-8"))
+    return jsonify(error="No CHANGELOG.md found at the top of the repo."), 404
 
 
 @app.post("/api/analyze")

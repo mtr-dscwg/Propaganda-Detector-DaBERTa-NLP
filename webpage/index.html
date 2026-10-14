@@ -5,16 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Propaganda Detector</title>
 <style>
-  /* Tokens taken from the portfolio site (index.astro). */
+  /* Tokens matching the portfolio site (src/styles/theme.css + fonts.css).
+     If the site's palette or font changes, update these to match. */
   :root {
-    --ink:   #1a1a1a;
-    --muted: #4a4a4a;
-    --faint: #6b6b6b;     /* tags and secondary output; 5:1 on white */
-    --line:  #e4e4e4;     /* hairlines inside the box */
-    --paper: #ffffff;
+    color-scheme: light;
+    --paper: #faf8f4;     /* = --paper on the site: warm off-white */
+    --ink:   #1f2a44;     /* = --ink: deep ink blue */
+    --muted: #56607a;     /* = --ink-soft: blue-grey */
+    --faint: #666e84;     /* lighter blue-grey for hints and tags; 4.8:1 on paper */
+    --line:  #e7e3db;     /* warm hairlines */
+    --tint:  #f1eee8;     /* code backgrounds */
     --ease:  cubic-bezier(0.22, 1, 0.36, 1);
-    /* Tailwind's default sans stack. If Layout.astro sets a custom font, put it first here. */
-    --sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    --col:   44rem;       /* shared width: tool, changelog, write-up */
+    /* Same as the site. Selawik only loads on the portfolio; here, non-Windows machines fall back to system-ui. */
+    --sans: "Segoe UI", "Selawik", system-ui, sans-serif;
     --mono: ui-monospace, "Cascadia Mono", Consolas, Menlo, monospace;
   }
   * { box-sizing: border-box; }
@@ -54,8 +58,8 @@
 
   /* The box: the terminal lives in here */
   .term {
-    max-width: calc(80ch + 58px);
-    margin: 0 auto 96px;
+    max-width: var(--col);
+    margin: 0 auto 32px;
     border: 1px solid var(--ink);
     background: var(--paper);
     font: 14px/1.65 var(--mono);
@@ -153,8 +157,77 @@
   .enter.d2 { animation-delay: 0.35s; }
   .reveal { animation: fade-slide-up 0.6s var(--ease) both; }
 
+  .col { max-width: var(--col); margin-left: auto; margin-right: auto; }
+
+  /* Changelog bar: a <details> element, so it opens and closes without any script */
+  .changelog { margin-bottom: 72px; border: 1px solid var(--line); }
+  .changelog summary {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; cursor: pointer; list-style: none;
+    font-size: 0.95rem; font-weight: 500; color: var(--ink);
+    transition: opacity 150ms;
+  }
+  .changelog summary::-webkit-details-marker { display: none; }
+  .changelog summary:hover { opacity: .7; }
+  .changelog summary svg { width: 20px; height: 20px; transition: rotate 0.4s var(--ease); }
+  .changelog[open] summary svg { rotate: 180deg; }
+  .changelog-body { border-top: 1px solid var(--line); }
+  .changelog-scroll {
+    padding: 8px 20px 16px;
+    max-height: 26rem; overflow-y: auto;   /* long changelogs scroll inside the bar */
+  }
+  .changelog-src { margin: 0; padding: 12px 20px; border-top: 1px solid var(--line); font-size: 0.9rem; }
+  .changelog-src a { color: var(--muted); }
+  .faint { color: var(--faint); }
+
+  /* Rendered Markdown (changelog) */
+  .md { font-size: 0.95rem; line-height: 1.65; color: var(--muted); }
+  .md h3, .md h4, .md h5 { color: var(--ink); font-weight: 600; letter-spacing: -0.01em; margin: 20px 0 6px; }
+  .md h3 { font-size: 1.15rem; }
+  .md h4 { font-size: 1rem; }
+  .md h5 { font-size: 0.95rem; }
+  .md p { margin: 8px 0; }
+  .md ul, .md ol { margin: 6px 0; padding-left: 1.4em; }
+  .md li { margin: 3px 0; }
+  .md strong { color: var(--ink); font-weight: 600; }
+  .md a { color: var(--ink); text-underline-offset: 3px; }
+  .md code { font: 0.85em var(--mono); background: var(--tint); padding: 1px 5px; }
+  .md pre { background: var(--tint); padding: 12px 14px; overflow-x: auto; }
+  .md pre code { background: none; padding: 0; }
+  .md hr { border: 0; border-top: 1px solid var(--line); margin: 16px 0; }
+
+  /* Project write-up */
+  .writeup { margin-bottom: 64px; color: var(--muted); font-size: 1.05rem; line-height: 1.75; }
+  .writeup h2 {
+    margin: 0 0 8px; color: var(--ink);
+    font-size: clamp(1.75rem, 4vw, 2.25rem); font-weight: 600; letter-spacing: -0.03em; line-height: 1.15;
+  }
+  .writeup h3 { margin: 40px 0 8px; color: var(--ink); font-size: 1.2rem; font-weight: 600; letter-spacing: -0.01em; }
+  .writeup p { margin: 12px 0; }
+  .writeup ol, .writeup ul { margin: 12px 0; padding-left: 1.4em; }
+  .writeup li { margin: 8px 0; }
+  .writeup strong { color: var(--ink); font-weight: 600; }
+  .writeup .lede { font-size: 1.15rem; color: var(--ink); }
+  .writeup a { color: var(--ink); text-underline-offset: 3px; }
+
+  /* Footer links under the tool */
+  .links {
+    display: flex; justify-content: center; gap: 24px; flex-wrap: wrap;
+    margin: 0 auto 96px; padding: 0 24px;
+    font-size: 0.95rem; font-weight: 500;
+  }
+  .links a {
+    color: var(--muted); text-decoration: none;
+    transition: color 150ms;
+  }
+  .links a:hover { color: var(--ink); }
+
   @media (max-width: 640px) {
-    .term { margin: 0 12px 64px; }
+    .term { margin: 0 12px 32px; }
+    .col { margin-left: 12px; margin-right: 12px; }
+    .changelog-scroll { padding: 8px 16px 16px; }
+    .changelog-src { padding: 12px 16px; }
+    .links { margin-bottom: 64px; }
     .screen { padding: 16px; }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -165,8 +238,8 @@
 </head>
 <body>
 <header>
-  <!-- Point this at your site's URL once it's deployed. -->
-  <a href="/">Home</a>
+  <!-- Same as the site header. Point this at your portfolio's address (e.g. your Vercel URL). -->
+  <a href="/">Menturu</a>
 </header>
 
 <main>
@@ -192,6 +265,107 @@ Highlights are suggestions, not verdicts: span detection tops out near 0.5 F1 ev
       <section id="output" aria-live="polite"></section>
     </div>
   </div>
+  <!-- Changelog: read live from CHANGELOGS.md in the repo when first opened. -->
+  <details class="changelog col enter d2" id="changelog">
+    <summary>
+      <span>Changelog</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+    </summary>
+    <div class="changelog-body">
+      <div class="changelog-scroll">
+        <div id="changelog-content" class="md"><p class="faint">Loading the changelog...</p></div>
+      </div>
+      <p class="changelog-src"><a href="https://github.com/mtr-dscwg/Propaganda-Detector-DaBERTa-NLP/blob/main/CHANGELOGS.md" target="_blank" rel="noopener noreferrer">View on GitHub</a></p>
+    </div>
+  </details>
+
+  <!-- Project write-up. Highlighted bits are placeholders still to fill in. -->
+  <article class="writeup col">
+    <h2>About this project</h2>
+    <p class="lede">
+      The Propaganda Detector reads a news article and highlights passages that use propaganda techniques,
+      such as loaded language, name calling, appeals to fear and slogans, then labels which technique each one is.
+    </p>
+    <p>
+      It's built on SemEval-2020 Task 11, a shared research task where teams from around the world built systems
+      for exactly this problem. The task defines 14 techniques, and this project follows that list and that way of
+      measuring success, so that results can be compared with published work.
+    </p>
+    <p>
+      <strong>Highlights are suggestions, not verdicts.</strong> Even trained annotators often disagree about what
+      counts as propaganda, and the best competition systems found only about half of the passages humans marked.
+      Treat a highlight as a prompt to read that sentence more carefully, not as a judgement on the article or its author.
+    </p>
+
+    <h3>How it works</h3>
+    <p>The detector works in two stages, the same way the task itself is split up.</p>
+    <ol>
+      <li>
+        <strong>Finding passages.</strong> A DeBERTa-v3 model reads the article and marks each word as the start of,
+        the inside of, or outside a propagandistic passage. A CRF layer on top keeps those marks consistent, so that
+        each passage comes out as one clean, unbroken span.
+      </li>
+      <li>
+        <strong>Naming the technique.</strong> Each passage goes to a second DeBERTa-v3 model, with marker tokens placed
+        around it so the model sees both the passage and the text around it. It picks one of the 14 techniques, or
+        "none" when the first stage raised a false alarm.
+      </li>
+    </ol>
+    <p>
+      Every highlight carries two confidence scores: first, how sure the first stage is that the passage is
+      propagandistic, and second, how sure the second stage is about the technique. The <code>--min-confidence</code>
+      setting above filters on the two multiplied together.
+    </p>
+
+    <h3>Results</h3>
+    <p>Three numbers are measured, as each represents something different:</p>
+    <ul>
+      <li>
+        <strong>Finding passages</strong> (span F1): 48.4 ± 1.2. For comparison, ApplicaAI, one of the top teams in
+        the competition, reported 47.4 on the competition's development set using a single RoBERTa-large model with a
+        CRF layer.
+      </li>
+      <li>
+        <strong>Naming techniques, given the correct passages</strong> (micro-F1): 66.6 ± 0.6. ApplicaAI's single
+        models reached about 72 on the development set.
+      </li>
+      <li><strong>Both together, end to end</strong>: 25.6 to 27.9 across two seeds, with a seed-averaged figure still to come.</li>
+    </ul>
+    <p>
+      Scores are the mean and spread over 6 training runs with different random seeds, measured on 30 held-out
+      development articles that the models never train on. The competition was ranked on a separate test set whose
+      labels aren't public, so other teams' development scores are the closest comparison. Theirs cover the full
+      75-article development set rather than these 30, so treat the comparison as approximate. End to end is much lower
+      than either stage alone because mistakes compound, and a passage the first stage misses can never be labelled
+      correctly.
+    </p>
+    <p>
+      Full results, including scores for each technique, are in
+      <a href="https://github.com/mtr-dscwg/Propaganda-Detector-DaBERTa-NLP/blob/main/Results/121026.md" target="_blank" rel="noopener noreferrer">Results/121026.md</a>
+      (12 October 2026).
+    </p>
+
+    <h3>Limitations</h3>
+    <ul>
+      <li>English only, and trained on news from 2017 to 2019. Newer topics and writing styles may trip it up.</li>
+      <li>
+        Propaganda is partly subjective, as the corpus's annotators agree only moderately with each other, which puts
+        a ceiling on how well any model can score against them.
+      </li>
+      <li>
+        The training articles come from a limited set of outlets, so the model may partly learn each outlet's house
+        style rather than the techniques themselves. I've started testing this by matching development articles to their
+        publishers using the proppy 1.0 corpus, which identified the outlet for half of them. Only two outlets had three
+        or more articles, though, far too few to draw any conclusion. A broader comparison between propaganda-rated and
+        mainstream outlets is still to come.
+      </li>
+      <li>Pasting a link is experimental. Many news sites block automated requests, so pasting the article text is more reliable.</li>
+    </ul>
+  </article>
+
+  <nav class="links" aria-label="Project links">
+    <a href="https://github.com/mtr-dscwg/Propaganda-Detector-DaBERTa-NLP" target="_blank" rel="noopener noreferrer">Source on GitHub</a>
+  </nav>
 </main>
 
 <script>
@@ -364,6 +538,85 @@ function jumpTo(n) {
   void m.offsetWidth;                // restart the animation
   m.classList.add("flash");
 }
+
+// ---- Changelog ----------------------------------------------------------
+// A small, safe Markdown renderer: everything is HTML-escaped first, then only a
+// handful of formats are turned into tags, so nothing in the file can run as code.
+function escapeHtml(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function inlineMd(text) {
+  const codes = [];   // pull `code` out first so its contents stay literal
+  let s = text.replace(/`([^`]+)`/g, (_, c) => { codes.push(c); return `\u0000${codes.length - 1}\u0000`; });
+  s = escapeHtml(s);
+  s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+  s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>").replace(/__([^_]+)__/g, "<strong>$1</strong>");
+  s = s.replace(/(^|[^*])\*([^*\s][^*]*)\*/g, "$1<em>$2</em>");
+  return s.replace(/\u0000(\d+)\u0000/g, (_, i) => `<code>${escapeHtml(codes[+i])}</code>`);
+}
+
+function renderMarkdown(src) {
+  const out = [];
+  let para = [], list = null, code = null;
+  const flushPara = () => { if (para.length) { out.push(`<p>${inlineMd(para.join(" "))}</p>`); para = []; } };
+  const flushList = () => {
+    if (!list) return;
+    out.push(`<${list.tag}>${list.items.map((i) => `<li>${inlineMd(i)}</li>`).join("")}</${list.tag}>`);
+    list = null;
+  };
+  for (const line of src.replace(/\r\n?/g, "\n").split("\n")) {
+    if (/^\s*```/.test(line)) {                       // fenced code block
+      if (code) { out.push(`<pre><code>${escapeHtml(code.join("\n"))}</code></pre>`); code = null; }
+      else { flushPara(); flushList(); code = []; }
+      continue;
+    }
+    if (code) { code.push(line); continue; }
+    const h = line.match(/^(#{1,6})\s+(.*)$/);
+    const ul = line.match(/^\s*[-*+]\s+(.*)$/);
+    const ol = line.match(/^\s*\d+[.)]\s+(.*)$/);
+    if (h) {                                           // # -> h3, ## -> h4, ... (the page already has h1/h2)
+      flushPara(); flushList();
+      const level = Math.min(h[1].length + 2, 6);
+      out.push(`<h${level}>${inlineMd(h[2])}</h${level}>`);
+    } else if (/^\s*(---|\*\*\*|___)\s*$/.test(line)) {
+      flushPara(); flushList(); out.push("<hr>");
+    } else if (ul || ol) {
+      flushPara();
+      const tag = ul ? "ul" : "ol";
+      if (!list || list.tag !== tag) { flushList(); list = { tag, items: [] }; }
+      list.items.push((ul || ol)[1]);
+    } else if (!line.trim()) {
+      flushPara(); flushList();
+    } else if (list && /^\s{2,}/.test(line)) {        // indented continuation of a list item
+      list.items[list.items.length - 1] += " " + line.trim();
+    } else {
+      flushList(); para.push(line.trim());
+    }
+  }
+  if (code) out.push(`<pre><code>${escapeHtml(code.join("\n"))}</code></pre>`);
+  flushPara(); flushList();
+  return out.join("");
+}
+
+let changelogLoaded = false;
+$("changelog").addEventListener("toggle", async () => {
+  if (!$("changelog").open || changelogLoaded) return;
+  changelogLoaded = true;
+  const box = $("changelog-content");
+  try {
+    const res = await fetch("/api/changelog");
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `Server returned ${res.status}.`);
+    // Skip the file's own "# Changelog" title; the bar already says it.
+    box.innerHTML = renderMarkdown(data.markdown.replace(/^\s*#\s+changelogs?\s*\n/i, ""));
+  } catch (e) {
+    changelogLoaded = false;   // let a later open try again
+    box.replaceChildren(el("p", "faint", e instanceof TypeError
+      ? "Couldn't reach the server. Check that webpage/server.py is still running."
+      : e.message));
+  }
+});
 
 $("run").addEventListener("click", run);
 $("input").addEventListener("keydown", (e) => {

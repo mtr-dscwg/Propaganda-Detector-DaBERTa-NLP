@@ -1,5 +1,18 @@
 # Changelog
 
+## [14/10/26]
+
+### Fixed
+- 
+
+### Added
+- Added a direct CHANGELOGS.md link to the page
+- Added an explanation for the project in the page, along with the details of it
+ 
+### Changed
+- 
+
+
 ## [12/10/26]
 
 ### Fixed
